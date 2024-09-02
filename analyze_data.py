@@ -1,20 +1,22 @@
 import json
 import re
 import time
+import os
+import glob
 from collections import defaultdict
 
 def load_data(filepath):
     try:
-        print("Loading data...")
+        print(f"\nLoading data from {filepath}...")
         with open(filepath, 'r') as file:
             data = [json.loads(line) for line in file]
-        print("Data loaded successfully!\n")
+        print("\nData loaded successfully!")
         return data
     except FileNotFoundError:
-        print(f"Error: File '{filepath}' not found.")
+        print(f"\nError: File '{filepath}' not found.")
         return []
     except json.JSONDecodeError as e:
-        print(f"Error: Failed to decode JSON. {e}")
+        print(f"\nError: Failed to decode JSON in file '{filepath}'. {e}")
         return []
 
 def count_distinct_stories(data):
@@ -49,7 +51,7 @@ def validate_entity_id(data):
     invalid_ids = [record['RP_ENTITY_ID'] for record in data if not valid_id_pattern.match(record['RP_ENTITY_ID'])]
     return invalid_ids
 
-def main(file_path):
+def analyze_file(file_path):
     # Load data from file
     data = load_data(file_path)
     if not data:
@@ -57,7 +59,7 @@ def main(file_path):
     
     # Count distinct stories
     distinct_stories = count_distinct_stories(data)
-    print(f'Total number of distinct stories: {distinct_stories}\n')
+    print(f'\nTotal number of distinct stories: {distinct_stories}\n')
 
     # Find missing analytics
     missing_analytics = find_missing_analytics(data)
@@ -75,6 +77,19 @@ def main(file_path):
     else:
         print('All RP_ENTITY_IDs are valid.\n')
 
+def main():
+    # Directory containing the JSON files
+    data_directory = 'data/'
+
+    # List all JSON files in the directory
+    json_files = glob.glob(os.path.join(data_directory, '*.json'))
+    
+    if not json_files:
+        print(f"No JSON files found in '{data_directory}'.")
+        return
+    
+    for file_path in json_files:
+        analyze_file(file_path)
+
 if __name__ == "__main__":
-    file_path = 'data/rt-feed-record.json'
-    main(file_path)
+    main()
