@@ -53,7 +53,7 @@ The script will:
 
 ``` python -m unittest test_analyze_data.py ```
 
-This command will ran the 5 test for validate the methods in the `analyze_data.py`
+This command will ran the five test to validate the methods in the `analyze_data.py`
 
 
 ## Python Script Analysis 
