@@ -9,7 +9,7 @@ analyze-data-project/
 └── data/                          # Data folder
      │
      ├── rt-feed-debug.json        # Sample JSON data file 1 (input)
-     ├── rt-feed-record.json       # Sample JSON data file 2 (input)
+     └── rt-feed-record.json       # Sample JSON data file 2 (input)
 ├── Dockerfile                     # Docker configuration file
 ├── analyze_data.py                # Python script for data analysis
 ├── README.md                      # Project documentation (this file)
