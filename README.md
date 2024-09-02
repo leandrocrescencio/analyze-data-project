@@ -12,7 +12,8 @@ analyze-data-project/
      ├── rt-feed-record.json       # Sample JSON data file 2 (input)
 ├── Dockerfile                     # Docker configuration file
 ├── analyze_data.py                # Python script for data analysis
-└── README.md                      # Project documentation (this file)
+├── README.md                      # Project documentation (this file)
+└── test_analyze_data.py           # Unittest to validate the analyze_data.py
 ```
 
 ## Requirements
@@ -49,6 +50,12 @@ The script will:
 * The results will be printed in the terminal.
 
 The code is ready to handle different data files, replace the rt-feed-record.json or just add the data file in the data folder and the analyze_data.py script will capture it
+
+**5. Running the test**
+
+`python -m unittest test_analyze_data.py`
+
+This command will ran the 5 test for validate the methods in the analyze_data.py
 
 ## Conclusion
 This project demonstrates how to process and validate real-time analytics data efficiently within a Dockerized environment. Feel free to modify the script or Dockerfile to suit your needs.

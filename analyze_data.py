@@ -1,6 +1,5 @@
 import json
 import re
-import time
 import os
 import glob
 from collections import defaultdict
@@ -48,8 +47,13 @@ def find_missing_analytics(data):
 
 def validate_entity_id(data):
     valid_id_pattern = re.compile(r'^[A-Z0-9]{6}$')
-    invalid_ids = [record['RP_ENTITY_ID'] for record in data if not valid_id_pattern.match(record['RP_ENTITY_ID'])]
-    return invalid_ids
+    invalid_entries = [
+        (record['RP_DOCUMENT_ID'], record['RP_ENTITY_ID']) 
+        for record in data 
+        if not valid_id_pattern.match(record['RP_ENTITY_ID'])
+    ]
+    return invalid_entries
+
 
 def analyze_file(file_path):
     # Load data from file
@@ -66,16 +70,20 @@ def analyze_file(file_path):
     if missing_analytics:
         print('Stories with missing analytics:')
         for doc_id, missing_indices in missing_analytics.items():
-            print(f'{doc_id}: Missing indices {sorted(missing_indices)}\n')
+            print(f'Document ID {doc_id}: Missing indices {sorted(missing_indices)}')
     else:
         print('No missing analytics found.\n')
 
     # Validate RP_ENTITY_ID
     invalid_entity_ids = validate_entity_id(data)
     if invalid_entity_ids:
-        print(f'Invalid RP_ENTITY_IDs: {invalid_entity_ids}\n')
+        print('\nInvalid RP_ENTITY_IDs:\n')
+        for doc_id, entity_id in invalid_entity_ids:
+            print(f'Document ID: {doc_id}: Invalid RP_ENTITY_ID {entity_id}')
+        print()  # Extra newline for readability
     else:
         print('All RP_ENTITY_IDs are valid.\n')
+
 
 def main():
     # Directory containing the JSON files
