@@ -1,6 +1,6 @@
 import unittest
-from unittest.mock import patch, mock_open
-from analyze_data import load_data, count_distinct_stories, find_missing_analytics, validate_entity_id
+from collections import defaultdict
+from analyze_data import count_distinct_stories, find_missing_analytics, validate_entity_id
 
 class TestAnalyzeData(unittest.TestCase):
     
@@ -14,7 +14,7 @@ class TestAnalyzeData(unittest.TestCase):
             {"RP_DOCUMENT_ID": "DOC002", "DOCUMENT_RECORD_INDEX": 2, "DOCUMENT_RECORD_COUNT": 2, "RP_ENTITY_ID": "XYZ789"}
         ]
         # Sample data with missing indices (DOC001 missing index 3, DOC003 missing index 1)
-        self.sample_data_2 = [
+        self.sample_data__missing_indices = [
             {"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 3, "RP_ENTITY_ID": "ABC123"},
             {"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 2, "DOCUMENT_RECORD_COUNT": 3, "RP_ENTITY_ID": "ABC123"},
             {"RP_DOCUMENT_ID": "DOC002", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 2, "RP_ENTITY_ID": "XYZ789"},
@@ -40,7 +40,7 @@ class TestAnalyzeData(unittest.TestCase):
         self.assertEqual(len(missing_analytics), 0)
     
     def test_find_missing_analytics_with_missing(self):
-        missing_analytics = find_missing_analytics(self.sample_data_2)
+        missing_analytics = find_missing_analytics(self.sample_data__missing_indices)
         # Expect DOC001 to be missing index 3, and DOC003 to be missing index 1
         expected_missing = {
             "DOC001": [3],
@@ -49,20 +49,20 @@ class TestAnalyzeData(unittest.TestCase):
         self.assertEqual(missing_analytics, expected_missing)
     
     def test_validate_entity_id(self):
-        invalid_ids = validate_entity_id(self.sample_data_2)
+        invalid_ids = validate_entity_id(self.sample_data__missing_indices)
         # Expect no invalid RP_ENTITY_IDs
-        self.assertEqual(invalid_ids, [])
+        self.assertEqual(invalid_ids, {})
     
     def test_validate_invalid_entity_id(self):
         invalid_ids = validate_entity_id(self.sample_data_invalid_ids)
         # Expect to find invalid RP_ENTITY_IDs in the list
-        expected_invalid_ids = [
-            ("DOC004", "ABC12"), 
-            ("DOC005", "1234567"), 
-            ("DOC006", "ABCD12X")
-        ]
+        # Expect DOC004  DOC005 and DOC006 to have invalid entity ids
+        expected_invalid_ids = defaultdict(list, {
+            "DOC004": ["ABC12"], 
+            "DOC005": ["1234567"], 
+            "DOC006": ["ABCD12X"]
+    })
         self.assertEqual(invalid_ids, expected_invalid_ids)
 
-
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(TestAnalyzeData))

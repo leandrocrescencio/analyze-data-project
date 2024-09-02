@@ -18,9 +18,14 @@ def load_data(filepath):
         print(f"\nError: Failed to decode JSON in file '{filepath}'. {e}")
         return []
 
+# Check data for unique RP_DOCUMENT_ID
 def count_distinct_stories(data):
     distinct_stories = set(record['RP_DOCUMENT_ID'] for record in data)
     return len(distinct_stories)
+
+# Check all RP_DOCUMENT_ID stories
+# and store the missing DOCUMENT_RECORD_INDEX if needed 
+# basically a loop to check if the INDEX in the range of the COUNT
 
 def find_missing_analytics(data):
     story_records = defaultdict(list)
@@ -45,15 +50,22 @@ def find_missing_analytics(data):
 
     return missing_analytics
 
+# Check all RP_DOCUMENT_ID stories entries
+# and validate the diferent RP_ENTITY_ID using a regex
+# Pattern assumed here if uppercase letters (A-Z) and digits (0-9)
+# Having exactly 6 characters.
+
 def validate_entity_id(data):
     valid_id_pattern = re.compile(r'^[A-Z0-9]{6}$')
-    invalid_entries = [
-        (record['RP_DOCUMENT_ID'], record['RP_ENTITY_ID']) 
-        for record in data 
-        if not valid_id_pattern.match(record['RP_ENTITY_ID'])
-    ]
+    invalid_entries = defaultdict(list)
+    
+    for record in data:
+        if not valid_id_pattern.match(record['RP_ENTITY_ID']):
+            invalid_entries[record['RP_DOCUMENT_ID']].append(record['RP_ENTITY_ID'])
+    
     return invalid_entries
 
+# Check all JSONs in the path
 
 def analyze_file(file_path):
     # Load data from file
@@ -63,30 +75,30 @@ def analyze_file(file_path):
     
     # Count distinct stories
     distinct_stories = count_distinct_stories(data)
-    print(f'\nTotal number of distinct stories: {distinct_stories}\n')
-
+    print(f'\nTotal number of distinct stories in the {file_path}: {distinct_stories}\n')
     # Find missing analytics
     missing_analytics = find_missing_analytics(data)
     if missing_analytics:
-        print('Stories with missing analytics:')
+        print(f'Stories with missing analytics in the {file_path}:\n')
         for doc_id, missing_indices in missing_analytics.items():
-            print(f'Document ID {doc_id}: Missing indices {sorted(missing_indices)}')
+            print(f'Document ID: {doc_id}: Missing indices {sorted(missing_indices)}')
+        print()  # newline porque si
     else:
-        print('No missing analytics found.\n')
+        print(f'No missing analytics found in the {file_path}.\n')
 
     # Validate RP_ENTITY_ID
     invalid_entity_ids = validate_entity_id(data)
     if invalid_entity_ids:
-        print('\nInvalid RP_ENTITY_IDs:\n')
-        for doc_id, entity_id in invalid_entity_ids:
-            print(f'Document ID: {doc_id}: Invalid RP_ENTITY_ID {entity_id}')
-        print()  # Extra newline for readability
+        print(f'Invalid RP_ENTITY_IDs in the {file_path}:\n')
+        for doc_id, entity_ids in invalid_entity_ids.items():
+            print(f'Document ID: {doc_id}: Invalid RP_ENTITY_ID: {entity_ids}')
+        print()  # newline porque si
     else:
-        print('All RP_ENTITY_IDs are valid.\n')
+        print(f'All RP_ENTITY_IDs are valid in the {file_path}.\n')
 
 
 def main():
-    # Directory containing the JSON files
+    # Path Directory containing the JSON files
     data_directory = 'data/'
 
     # List all JSON files in the directory
