@@ -4,18 +4,29 @@ import os
 import glob
 from collections import defaultdict
 
+# Function to load JSON data from a file, ignoring empty lines
 def load_data(filepath):
     try:
         print(f"\nLoading data from {filepath}...")
         with open(filepath, 'r') as file:
-            data = [json.loads(line) for line in file]
-        print("\nData loaded successfully!")
+            data = []
+            for line in file:
+                stripped_line = line.strip()
+                if stripped_line:  # Ignore empty lines
+                    try:
+                        data.append(json.loads(stripped_line))
+                    except json.JSONDecodeError as e:
+                        print(f"Warning: Skipping malformed line in {filepath}: {e}")
+        if data:
+            print("\nData loaded successfully!")
+        else:
+            print("\nWarning: No valid data found in the file.")
         return data
     except FileNotFoundError:
         print(f"\nError: File '{filepath}' not found.")
         return []
-    except json.JSONDecodeError as e:
-        print(f"\nError: Failed to decode JSON in file '{filepath}'. {e}")
+    except Exception as e:
+        print(f"\nError: Failed to load data from '{filepath}'. {e}")
         return []
 
 # Check data for unique RP_DOCUMENT_ID
