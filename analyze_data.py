@@ -4,6 +4,9 @@ import os
 import glob
 from collections import defaultdict
 
+# Fields every record must have for the downstream checks to run safely
+REQUIRED_FIELDS = ('RP_DOCUMENT_ID', 'DOCUMENT_RECORD_INDEX', 'DOCUMENT_RECORD_COUNT', 'RP_ENTITY_ID')
+
 # Function to load JSON data from a file, ignoring empty lines
 def load_data(filepath):
     try:
@@ -14,9 +17,15 @@ def load_data(filepath):
                 stripped_line = line.strip()
                 if stripped_line:  # Ignore empty lines
                     try:
-                        data.append(json.loads(stripped_line))
+                        record = json.loads(stripped_line)
                     except json.JSONDecodeError as e:
                         print(f"Warning: Skipping malformed line in {filepath}: {e}")
+                        continue
+                    missing_fields = [field for field in REQUIRED_FIELDS if field not in record]
+                    if missing_fields:
+                        print(f"Warning: Skipping record missing fields {missing_fields} in {filepath}: {record}")
+                        continue
+                    data.append(record)
         if data:
             print("\nData loaded successfully!")
         else:
@@ -52,12 +61,9 @@ def find_missing_analytics(data):
     
     for doc_id, indices in story_records.items():
         expected_count = expected_counts[doc_id]
-        actual_count = len(indices)
-
-        if actual_count != expected_count:
-            missing_indices = set(range(1, expected_count + 1)) - set(indices)
-            if missing_indices:
-                missing_analytics[doc_id] = sorted(missing_indices)
+        missing_indices = set(range(1, expected_count + 1)) - set(indices)
+        if missing_indices:
+            missing_analytics[doc_id] = sorted(missing_indices)
 
     return missing_analytics
 

@@ -7,9 +7,9 @@ WORKDIR /app
 # Copy the current directory contents into the container at /app
 COPY . /app
 
-# Install any necessary packages
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir jsonlines
+# Upgrade pip (the script only uses the Python standard library, so there are no
+# third-party packages to install)
+RUN pip install --no-cache-dir --upgrade pip
 
 # Command to run the script
 CMD ["python", "analyze_data.py"]

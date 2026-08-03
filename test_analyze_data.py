@@ -1,6 +1,8 @@
+import os
+import tempfile
 import unittest
 from collections import defaultdict
-from analyze_data import count_distinct_stories, find_missing_analytics, validate_entity_id
+from analyze_data import count_distinct_stories, find_missing_analytics, validate_entity_id, load_data
 
 class TestAnalyzeData(unittest.TestCase):
     
@@ -64,5 +66,64 @@ class TestAnalyzeData(unittest.TestCase):
     })
         self.assertEqual(invalid_ids, expected_invalid_ids)
 
+    def test_find_missing_analytics_duplicate_index_does_not_mask_missing(self):
+        # Regression test: DOC001 has a duplicated index (1 appears twice) and
+        # is missing index 3, but len(indices) == DOCUMENT_RECORD_COUNT, so a
+        # naive count comparison would previously skip it entirely.
+        data_with_duplicate = [
+            {"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 3, "RP_ENTITY_ID": "ABC123"},
+            {"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 3, "RP_ENTITY_ID": "ABC123"},
+            {"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 2, "DOCUMENT_RECORD_COUNT": 3, "RP_ENTITY_ID": "ABC123"},
+        ]
+        missing_analytics = find_missing_analytics(data_with_duplicate)
+        self.assertEqual(missing_analytics, {"DOC001": [3]})
+
+
+class TestLoadData(unittest.TestCase):
+
+    def _write_temp_file(self, content):
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+        temp_file.write(content)
+        temp_file.close()
+        self.addCleanup(os.remove, temp_file.name)
+        return temp_file.name
+
+    def test_load_data_missing_file_returns_empty_list(self):
+        data = load_data('does_not_exist.json')
+        self.assertEqual(data, [])
+
+    def test_load_data_skips_malformed_json_line(self):
+        content = (
+            '{"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 1, "RP_ENTITY_ID": "ABC123"}\n'
+            'not valid json\n'
+        )
+        filepath = self._write_temp_file(content)
+        data = load_data(filepath)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['RP_DOCUMENT_ID'], 'DOC001')
+
+    def test_load_data_skips_records_missing_required_fields(self):
+        # Regression test: a record missing a required field (RP_ENTITY_ID here)
+        # used to reach downstream functions and raise an unhandled KeyError,
+        # aborting analysis for the whole file.
+        content = (
+            '{"RP_DOCUMENT_ID": "DOC001", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 1, "RP_ENTITY_ID": "ABC123"}\n'
+            '{"RP_DOCUMENT_ID": "DOC002", "DOCUMENT_RECORD_INDEX": 1, "DOCUMENT_RECORD_COUNT": 1}\n'
+        )
+        filepath = self._write_temp_file(content)
+        data = load_data(filepath)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['RP_DOCUMENT_ID'], 'DOC001')
+        # Downstream functions must not raise despite the malformed input file
+        count_distinct_stories(data)
+        find_missing_analytics(data)
+        validate_entity_id(data)
+
+
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().loadTestsFromTestCase(TestAnalyzeData))
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite([
+        loader.loadTestsFromTestCase(TestAnalyzeData),
+        loader.loadTestsFromTestCase(TestLoadData),
+    ])
+    unittest.TextTestRunner(verbosity=2).run(suite)

@@ -17,7 +17,7 @@ analyze-data-project/
 ```
 
 ## Requirements
-Docker: Make sure Docker is installed on your system. You can download and install Docker from the official website.
+Docker: Make sure Docker is installed on your system and the Docker daemon is running. You can download and install Docker from the official website.
 
 ## Setup and Execution
 **1. Clone the Repository**
@@ -44,7 +44,7 @@ This command will:
 **4. Output**
 
 The script will:
-* Count the total number of distinct stories in the provided data inside the the `data` folder.
+* Count the total number of distinct stories in the provided data inside the `data` folder.
 * Detect and report any missing analytics based on the DOCUMENT_RECORD_INDEX and DOCUMENT_RECORD_COUNT fields, and print it
 * Validate the format of the RP_ENTITY_ID field against the expected pattern and print the result.
 
@@ -53,17 +53,17 @@ The script will:
 
 ``` python -m unittest test_analyze_data.py ```
 
-This command will ran the five test to validate the methods in the `analyze_data.py`
+This command will run the tests that validate the methods in `analyze_data.py`
 
 
 ## Python Script Analysis 
 
 ### Functions
-- **load_data(filepath):** Loads JSON data from the data folder.
+- **load_data(filepath):** Loads JSON Lines data from a file, skipping empty lines, malformed JSON lines, and records missing a required field (printing a warning for each).
 - **count_distinct_stories(data):** Counts the total number of distinct stories based on RP_DOCUMENT_ID.
 - **find_missing_analytics(data):** Identifies and reports any missing analytics records for a story.
 - **validate_entity_id(data):** Validates the RP_ENTITY_ID field to ensure it matches the expected format.
-- **analyze_file(data):** Receives the data to apply the above methods 
+- **analyze_file(file_path):** Receives a file path, loads its data, and applies the above methods to it.
 
 ### Usage 
 
